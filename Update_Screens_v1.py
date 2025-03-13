@@ -4,8 +4,9 @@ import sys
 import traceback
 import argparse
 import tkinter as tk
-from tkinter import filedialog # pip install tkFileDialog
+from tkinter import filedialog 
 import pandas as pd
+from docx.opc.exceptions import PackageNotFoundError
 from docx import Document
 from docxtpl import DocxTemplate
 
@@ -65,12 +66,15 @@ def replace_screens(useCase, imagesFolder, screenToAltTextTable):
         try:
             useCasePath = os.path.abspath(useCase) 
             tpl = DocxTemplate(useCasePath)
-        except Exception as e:
-            print(f"Error opening Use Case file '{useCase}'\n\033[1mPlease make sure the file is not open in another program\033[0m")
+            for i in range(len(ImagePaths)):
+                tpl.replace_pic(altTexts[i], ImagePaths[i])
+                tpl.render(context)
+        except PackageNotFoundError as p:
+            print(f"Error opening Use Case file '{useCase}'\n\033[1mPlease make sure the use case Word Document is not open.\033[0m")
             return False
-        for i in range(len(ImagePaths)):
-            tpl.replace_pic(altTexts[i], ImagePaths[i])
-            tpl.render(context)
+        except Exception as e:
+            print(str(e))
+            return False
         try:
             useCasePathParent = os.path.abspath(os.path.dirname(useCase)) # os.path.dirname(useCasePath) )
             cwd = os.getcwd()
@@ -139,7 +143,13 @@ def main():
         print("\x1b[6;30;42m" + "\n-------------------------\nScreen update success!\n-------------------------" + "\x1b[0m ")
     else:
         print("\x1b[6;30;41m" + "\n-------------------------\nScreen update fail!\n-------------------------" + "\x1b[0m")
-    input('\033[1mPress ENTER to exit\033[0m')
+    restartBool = input('\033[1mWould you like to run the program again? (y/n)\033[0m ')
+    if restartBool.lower().lstrip().rstrip() == 'y':
+        args.useCase = None
+        args.images = None  
+        args.mapping = None
+        main()
+
 
 if __name__ == "__main__":
     main()
